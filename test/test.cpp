@@ -1,10 +1,4 @@
-#if defined(_WIN32) || defined(_WIN64)
-#include <windows.h>
-#endif
-
-#include <GL/gl.h>
-#include <GLFW/glfw3.h>
-#include <stdio.h>
+#include "Interface.hpp"
 
 void showFps(GLFWwindow *window) {
   static double prevTime = glfwGetTime();
@@ -32,7 +26,7 @@ int main(void) {
     return -1;
 
   /* Create a windowed mode window and its OpenGL context */
-  window = glfwCreateWindow(640, 480, "Hello World", NULL, NULL);
+  window = glfwCreateWindow(1600, 900, "p_interface_test", NULL, NULL);
   if (!window) {
     glfwTerminate();
     return -1;
@@ -41,20 +35,55 @@ int main(void) {
   /* Make the window's context current */
   glfwMakeContextCurrent(window);
 
+  if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
+    spdlog::error("Failed to initialize OpenGL context");
+    return -1;
+  }
+
+  // Initialize ImGui with GLFW & OpenGL && ImPlot
+  IMGUI_CHECKVERSION();
+  ImGui::CreateContext();
+  ImPlot::CreateContext();
+
+  ImGui::StyleColorsDark();
+  ImGui_ImplGlfw_InitForOpenGL(window, true);
+  ImGui_ImplOpenGL3_Init("#version 330");
+
   /* Loop until the user closes the window */
   while (!glfwWindowShouldClose(window)) {
-    /* Render here */
+    // Clear the screen
     glClear(GL_COLOR_BUFFER_BIT);
 
+    // Show FPS
     showFps(window);
 
-    /* Swap front and back buffers */
-    glfwSwapBuffers(window);
+    // Start the Dear ImGui frame
+    ImGui_ImplOpenGL3_NewFrame();
+    ImGui_ImplGlfw_NewFrame();
+    ImGui::NewFrame();
 
-    /* Poll for and process events */
+    // Dockspace
+    ImGui::DockSpaceOverViewport(ImGui::GetMainViewport());
+
+    // Demo windows
+    ImGui::ShowDemoWindow();
+    ImPlot::ShowDemoWindow();
+
+    // Render the window
+    ImGui::Render();
+    ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+
+    // Swap the buffers
+    glfwSwapBuffers(window);
     glfwPollEvents();
   }
 
+  // Cleanup
+  ImGui_ImplOpenGL3_Shutdown();
+  ImGui_ImplGlfw_Shutdown();
+  ImPlot::DestroyContext();
+  ImGui::DestroyContext();
+
+  glfwDestroyWindow(window);
   glfwTerminate();
-  return 0;
 }
